@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.LinearLayout;
 
@@ -26,45 +27,22 @@ public class MainActivity extends AppCompatActivity {
 
     private LinearLayout linearLayoutContainer;
 
-    private RecyclerView.OnScrollListener onScrollListener = new RecyclerView.OnScrollListener() {
-        @Override
-        public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-            super.onScrolled(recyclerView, dx, dy);
-            if ((int) recyclerView.getTag() == mTouchedRvTag) {
-                for (int noOfRecyclerView = 0; noOfRecyclerView < 2; noOfRecyclerView++) {
-                    if (noOfRecyclerView != (int) recyclerView.getTag()) {
-                        RecyclerView tempRecyclerView = linearLayoutContainer.findViewWithTag(noOfRecyclerView);
-                        tempRecyclerView.scrollBy(dx, dy);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-            super.onScrollStateChanged(recyclerView, newState);
-        }
-    };
-
-    private RecyclerView.OnItemTouchListener onItemTouchListener = new RecyclerView.OnItemTouchListener() {
-        @Override
-        public boolean onInterceptTouchEvent(RecyclerView rv, MotionEvent e) {
-            mTouchedRvTag = (int) rv.getTag();
-            return false;
-        }
-
-        @Override
-        public void onTouchEvent(@NonNull RecyclerView rv, MotionEvent e) {
-
-        }
-
-        @Override
-        public void onRequestDisallowInterceptTouchEvent(boolean disallowIntercept) {
-
-        }
-    };
-
     private RecyclerView recyclerViewFruits, recyclerViewFruitAttributes;
+
+    private final RecyclerView.OnScrollListener mLeftOSL = new SelfRemovingOnScrollListener() {
+        @Override
+        public void onScrolled(@NonNull final RecyclerView recyclerView, final int dx, final int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            recyclerViewFruitAttributes.scrollBy(dx, dy);
+        }
+    }, mRightOSL = new SelfRemovingOnScrollListener() {
+
+        @Override
+        public void onScrolled(@NonNull final RecyclerView recyclerView, final int dx, final int dy) {
+            super.onScrolled(recyclerView, dx, dy);
+            recyclerViewFruits.scrollBy(dx, dy);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,12 +69,82 @@ public class MainActivity extends AppCompatActivity {
         recyclerViewFruitAttributes.setNestedScrollingEnabled(false);
 
         // Scroll and Touch listeners
-        recyclerViewFruits.addOnScrollListener(onScrollListener);
-        recyclerViewFruits.addOnItemTouchListener(onItemTouchListener);
+        recyclerViewFruits.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
 
-        recyclerViewFruitAttributes.addOnScrollListener(onScrollListener);
-        recyclerViewFruitAttributes.addOnItemTouchListener(onItemTouchListener);
+            private int mLastY;
 
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull final RecyclerView rv, @NonNull final
+            MotionEvent e) {
+                Log.d("debug", "LEFT: onInterceptTouchEvent");
+
+                final Boolean ret = rv.getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
+                if (!ret) {
+                    onTouchEvent(rv, e);
+                }
+                return Boolean.FALSE;
+            }
+
+            @Override
+            public void onTouchEvent(@NonNull final RecyclerView rv, @NonNull final MotionEvent e) {
+                Log.d("debug", "LEFT: onTouchEvent");
+
+                final int action;
+                if ((action = e.getAction()) == MotionEvent.ACTION_DOWN && recyclerViewFruitAttributes
+                        .getScrollState() == RecyclerView.SCROLL_STATE_IDLE) {
+                    mLastY = rv.getScrollY();
+                    rv.addOnScrollListener(mLeftOSL);
+                } else {
+                    if (action == MotionEvent.ACTION_UP && rv.getScrollY() == mLastY) {
+                        rv.removeOnScrollListener(mLeftOSL);
+                    }
+                }
+            }
+
+            @Override
+            public void onRequestDisallowInterceptTouchEvent(final boolean disallowIntercept) {
+                Log.d("debug", "LEFT: onRequestDisallowInterceptTouchEvent");
+            }
+        });
+
+        recyclerViewFruitAttributes.addOnItemTouchListener(new RecyclerView.OnItemTouchListener() {
+
+            private int mLastY;
+
+            @Override
+            public boolean onInterceptTouchEvent(@NonNull final RecyclerView rv, @NonNull final
+            MotionEvent e) {
+                Log.d("debug", "RIGHT: onInterceptTouchEvent");
+
+                final Boolean ret = rv.getScrollState() != RecyclerView.SCROLL_STATE_IDLE;
+                if (!ret) {
+                    onTouchEvent(rv, e);
+                }
+                return Boolean.FALSE;
+            }
+
+            @Override
+            public void onTouchEvent(@NonNull final RecyclerView rv, @NonNull final MotionEvent e) {
+                Log.d("debug", "RIGHT: onTouchEvent");
+
+                final int action;
+                if ((action = e.getAction()) == MotionEvent.ACTION_DOWN && recyclerViewFruits
+                        .getScrollState
+                                () == RecyclerView.SCROLL_STATE_IDLE) {
+                    mLastY = rv.getScrollY();
+                    rv.addOnScrollListener(mRightOSL);
+                } else {
+                    if (action == MotionEvent.ACTION_UP && rv.getScrollY() == mLastY) {
+                        rv.removeOnScrollListener(mRightOSL);
+                    }
+                }
+            }
+
+            @Override
+            public void onRequestDisallowInterceptTouchEvent(final boolean disallowIntercept) {
+                Log.d("debug", "RIGHT: onRequestDisallowInterceptTouchEvent");
+            }
+        });
     }
 
     private void initData() {
@@ -140,5 +188,16 @@ public class MainActivity extends AppCompatActivity {
         linearLayoutContainer = findViewById(R.id.ll_container);
         recyclerViewFruits = findViewById(R.id.rv_fruits);
         recyclerViewFruitAttributes = findViewById(R.id.rv_fruit_attributes);
+    }
+
+    public class SelfRemovingOnScrollListener extends RecyclerView.OnScrollListener {
+
+        @Override
+        public final void onScrollStateChanged(@NonNull final RecyclerView recyclerView, final int newState) {
+            super.onScrollStateChanged(recyclerView, newState);
+            if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                recyclerView.removeOnScrollListener(this);
+            }
+        }
     }
 }
