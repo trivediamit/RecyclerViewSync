@@ -16,6 +16,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:baselineAligned="false"
             android:orientation="horizontal">
 
             <LinearLayout
@@ -30,12 +31,25 @@
 
             </LinearLayout>
 
+            <View
+                android:layout_width="0.5dp"
+                android:layout_height="match_parent"
+                android:layout_margin="4dp"
+                android:background="#696969" />
+
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/rv_fruits"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="6" />
+                android:layout_weight="6"
+                android:paddingBottom="10dp" />
         </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:layout_margin="4dp"
+            android:background="#696969" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -46,6 +60,12 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="4" />
+
+            <View
+                android:layout_width="0.5dp"
+                android:layout_height="match_parent"
+                android:layout_margin="4dp"
+                android:background="#696969" />
 
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/rv_fruit_attributes"
